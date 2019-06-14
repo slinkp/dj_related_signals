@@ -136,6 +136,15 @@ class Tests(TestCase):
         # The 'through' model gets a presave, but not the related model (categories)
         self.assertEqual(models.signal_log.keys(), ['rel presave'])
 
+    def test_m2m_direct_assigment_does_not_allow_unsaved_children(self):
+        customer = models.Customer(name='test unsaved m2m children')
+        customer.save()
+        cat1 = models.CustomerCategory(name='cat1')
+        with self.assertRaises(ValueError):
+            customer.categories_direct = [cat1]
+        with self.assertRaises(ValueError):
+            customer.categories_direct.add(cat1)
+
     def test_m2m_direct_forward_does_not_fire_related_presave(self):
         company = self.company
         customer = models.Customer(name='testing m2m direct forward', company=company)
