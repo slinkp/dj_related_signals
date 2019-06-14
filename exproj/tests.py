@@ -182,3 +182,55 @@ class Tests(TestCase):
 
         # The customer is not saved.
         self.assertItemsEqual(models.signal_log.keys(), ['category presave', 'category postsave'])
+
+    def test_1to1_forward_deletion(self):
+        cust = models.Customer(name='test 1-1 deletion')
+        cust.save()
+        extra = models.CustomerExtraJunk(customer=cust)
+        extra.save()
+        models.signal_log.clear()
+
+        extra.delete()
+        # No signals on `cust`
+        self.assertItemsEqual(models.signal_log.keys(), ['extra predelete', 'extra postdelete'])
+
+    def test_1to1_reverse_deletion_not_allowed(self):
+        # This was actually a bug as of django 1.8
+        # and was fixed in 1.9.  https://code.djangoproject.com/ticket/14368
+
+        cust = models.Customer(name='test 1-1 deletion')
+        cust.save()
+        extra = models.CustomerExtraJunk(customer=cust)
+        extra.save()
+        models.signal_log.clear()
+
+        with self.assertRaises(AttributeError):
+            cust.extrajunk = None
+            cust.save()
+
+        # self.assertItemsEqual(models.signal_log.keys(), [])
+
+
+    def test_1toM_forward_deletion(self):
+        # TODO
+        pass
+
+    def test_1toM_reverse_deletion(self):
+        # TODO
+        pass
+
+    def test_MtoM_direct_forward_deletion(self):
+        # TODO
+        pass
+
+    def test_MtoM_direct_reverse_deletion(self):
+        # TODO
+        pass
+
+    def test_MtoM_indirect_forward_deletion(self):
+        # TODO
+        pass
+
+    def test_MtoM_indirect_reverse_deletion(self):
+        # TODO
+        pass

@@ -105,6 +105,16 @@ def customer_category_rel_postsave(sender, **kwargs):
     signal_log['rel postsave'].append((sender, kwargs))
 
 
+@receiver(pre_delete, sender=CustomerExtraJunk)
+def predelete_extra(sender, **kwargs):
+    signal_log['extra predelete'].append((sender, kwargs))
+
+
+@receiver(post_delete, sender=CustomerExtraJunk)
+def postdelete_extra(sender, **kwargs):
+    signal_log['extra postdelete'].append((sender, kwargs))
+
+
 @receiver(pre_delete, sender=CustomerCategoryRel)
 def customer_category_rel_predelete(sender, **kwargs):
     signal_log['rel predelete'].append((sender, kwargs))
