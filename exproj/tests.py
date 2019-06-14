@@ -22,7 +22,8 @@ class Tests(TestCase):
         extra.customer = customer
         extra.save()
 
-        self.assertEqual(models.signal_log.keys(), ['extra junk presave'])
+        self.assertItemsEqual(
+            models.signal_log.keys(), ['extra junk presave', 'extra junk postsave'])
 
     def test_1to1_forward_direct_assignment_not_allowed_if_child_unsaved(self):
         customer = models.Customer(name='1to1 unsaved forward test', company=self.company)
@@ -56,7 +57,7 @@ class Tests(TestCase):
 
         self.assertEqual(extra.customer, customer)
         # 'extra presave' not sent because extra isn't actually saved yet
-        self.assertEqual(sorted(models.signal_log.keys()), ['customer presave'])
+        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
 
         # reloading customer proves we didn't actually save the relationship yet
         customer = models.Customer.objects.get(pk=customer.pk)
@@ -67,8 +68,9 @@ class Tests(TestCase):
         extra.save()
         customer = models.Customer.objects.get(pk=customer.pk)
         self.assertEqual(customer.extrajunk, extra)
-        self.assertEqual(
-            sorted(models.signal_log.keys()), ['customer presave', 'extra junk presave'])
+        self.assertItemsEqual(
+            sorted(models.signal_log.keys()),
+            ['customer presave', 'customer postsave', 'extra junk postsave', 'extra junk presave'])
 
     def test_1toM_forward_direct_assignment_does_not_fire_related_presave(self):
         customer = models.Customer(name='1to1 cust')
@@ -78,7 +80,7 @@ class Tests(TestCase):
 
         # No save triggered on company
         self.assertEqual(len(models.signal_log['customer presave']), 1)
-        self.assertItemsEqual(models.signal_log.keys(), ['customer presave'])
+        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
 
     def test_1toM_reverse_direct_assignment_does_not_fire_related_presave(self):
         customer2 = models.Customer(name="unsaved 1to1 cust")
@@ -134,7 +136,7 @@ class Tests(TestCase):
         rel.save()
 
         # The 'through' model gets a presave, but not the related model (categories)
-        self.assertEqual(models.signal_log.keys(), ['rel presave'])
+        self.assertEqual(models.signal_log.keys(), ['rel presave', 'rel postsave'])
 
     def test_m2m_direct_assigment_does_not_allow_unsaved_children(self):
         customer = models.Customer(name='test unsaved m2m children')
@@ -160,7 +162,7 @@ class Tests(TestCase):
         customer.save()
 
         # The related model (categories) don't get presave
-        self.assertEqual(models.signal_log.keys(), ['customer presave'])
+        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
 
     def test_m2m_direct_reverse_does_not_fire_related_presave(self):
         company = self.company
@@ -179,21 +181,4 @@ class Tests(TestCase):
         cat2.save()
 
         # The customer is not saved.
-        self.assertEqual(models.signal_log.keys(), ['category presave'])
-
-    def test_m2m_direct_forward_does_not_fire_related_presave(self):
-        company = self.company
-        customer = models.Customer(name='testing m2m direct forward', company=company)
-        customer.save()
-        cat1 = models.CustomerCategory(name='m2m cat 1')
-        cat1.save()
-        cat2 = models.CustomerCategory(name='m2m cat 2')
-        cat2.save()
-
-        models.signal_log.clear()
-
-        customer.categories_direct = [cat1, cat2]
-        customer.save()
-
-        # The related model (categories) don't get presave
-        self.assertEqual(models.signal_log.keys(), ['customer presave'])
+        self.assertItemsEqual(models.signal_log.keys(), ['category presave', 'category postsave'])

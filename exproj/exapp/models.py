@@ -3,6 +3,7 @@ from django.db.models.signals import (
     pre_save,
     post_save,
     pre_delete,
+    post_delete,
 )
 from django.dispatch import receiver
 
@@ -74,11 +75,41 @@ def pre_extrajunk_save(sender, **kwargs):
     signal_log['extra junk presave'].append((sender, kwargs))
 
 
+@receiver(post_save, sender=Company)
+def post_company_save(sender, **kwargs):
+    signal_log['company postsave'].append((sender, kwargs))
+
+
+@receiver(post_save, sender=Customer)
+def post_customer_save(sender, **kwargs):
+    signal_log['customer postsave'].append((sender, kwargs))
+
+
+@receiver(post_save, sender=CustomerCategory)
+def post_category_save(sender, **kwargs):
+    signal_log['category postsave'].append((sender, kwargs))
+
+
+@receiver(post_save, sender=CustomerExtraJunk)
+def post_extrajunk_save(sender, **kwargs):
+    signal_log['extra junk postsave'].append((sender, kwargs))
+
+
 @receiver(pre_save, sender=CustomerCategoryRel)
-def add_customer_category_rel(sender, **kwargs):
+def customer_category_rel_presave(sender, **kwargs):
     signal_log['rel presave'].append((sender, kwargs))
 
 
+@receiver(post_save, sender=CustomerCategoryRel)
+def customer_category_rel_postsave(sender, **kwargs):
+    signal_log['rel postsave'].append((sender, kwargs))
+
+
 @receiver(pre_delete, sender=CustomerCategoryRel)
-def remove_customer_category_rel(sender, **kwargs):
+def customer_category_rel_predelete(sender, **kwargs):
     signal_log['rel predelete'].append((sender, kwargs))
+
+
+@receiver(post_delete, sender=CustomerCategoryRel)
+def customer_category_rel_postdelete(sender, **kwargs):
+    signal_log['rel postdelete'].append((sender, kwargs))
