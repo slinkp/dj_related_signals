@@ -12,6 +12,9 @@ class Tests(TestCase):
     def setUp(self):
         models.signal_log.clear()
 
+    def assert_sent_exact(self, *keys):
+        self.assertItemsEqual(models.signal_log.keys(), keys)
+
     def test_1to1_forward_direct_assignment_obviously_fires(self):
         customer = models.Customer(name='1to1 forward test', company=self.company)
         customer.save()
@@ -22,8 +25,7 @@ class Tests(TestCase):
         extra.customer = customer
         extra.save()
 
-        self.assertItemsEqual(
-            models.signal_log.keys(), ['extra junk presave', 'extra junk postsave'])
+        self.assert_sent_exact('extra junk presave', 'extra junk postsave')
 
     def test_1to1_forward_direct_assignment_not_allowed_if_child_unsaved(self):
         customer = models.Customer(name='1to1 unsaved forward test', company=self.company)
@@ -57,7 +59,7 @@ class Tests(TestCase):
 
         self.assertEqual(extra.customer, customer)
         # 'extra presave' not sent because extra isn't actually saved yet
-        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
+        self.assert_sent_exact('customer presave', 'customer postsave')
 
         # reloading customer proves we didn't actually save the relationship yet
         customer = models.Customer.objects.get(pk=customer.pk)
@@ -68,9 +70,8 @@ class Tests(TestCase):
         extra.save()
         customer = models.Customer.objects.get(pk=customer.pk)
         self.assertEqual(customer.extrajunk, extra)
-        self.assertItemsEqual(
-            sorted(models.signal_log.keys()),
-            ['customer presave', 'customer postsave', 'extra junk postsave', 'extra junk presave'])
+        self.assert_sent_exact(
+            'customer presave', 'customer postsave', 'extra junk postsave', 'extra junk presave')
 
     def test_1toM_forward_direct_assignment_does_not_fire_related_presave(self):
         customer = models.Customer(name='1to1 cust')
@@ -80,7 +81,7 @@ class Tests(TestCase):
 
         # No save triggered on company
         self.assertEqual(len(models.signal_log['customer presave']), 1)
-        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
+        self.assert_sent_exact('customer presave', 'customer postsave')
 
     def test_1toM_reverse_direct_assignment_does_not_fire_related_presave(self):
         customer2 = models.Customer(name="unsaved 1to1 cust")
@@ -162,7 +163,7 @@ class Tests(TestCase):
         customer.save()
 
         # The related model (categories) don't get presave
-        self.assertItemsEqual(models.signal_log.keys(), ['customer presave', 'customer postsave'])
+        self.assert_sent_exact('customer presave', 'customer postsave')
 
     def test_m2m_direct_reverse_does_not_fire_related_presave(self):
         company = self.company
@@ -181,7 +182,7 @@ class Tests(TestCase):
         cat2.save()
 
         # The customer is not saved.
-        self.assertItemsEqual(models.signal_log.keys(), ['category presave', 'category postsave'])
+        self.assert_sent_exact('category presave', 'category postsave')
 
     def test_1to1_forward_deletion(self):
         cust = models.Customer(name='test 1-1 deletion')
@@ -192,11 +193,12 @@ class Tests(TestCase):
 
         extra.delete()
         # No signals on `cust`
-        self.assertItemsEqual(models.signal_log.keys(), ['extra predelete', 'extra postdelete'])
+        self.assert_sent_exact('extra predelete', 'extra postdelete')
 
     def test_1to1_reverse_deletion_not_allowed(self):
         # This was actually a bug as of django 1.8
         # and was fixed in 1.9.  https://code.djangoproject.com/ticket/14368
+        # So this test fails on 1.9!
 
         cust = models.Customer(name='test 1-1 deletion')
         cust.save()
