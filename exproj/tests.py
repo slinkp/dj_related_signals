@@ -44,9 +44,9 @@ class Tests(TestCase):
         customer.extrajunk = extra
         customer.save()
 
-        self.assertIn('customer presave', models.signal_log.keys())
+        self.assertIn('customer presave', models.signal_log)
         # Passes on both 1.8 and 1.9
-        self.assertNotIn('extra junk presave', models.signal_log.keys())
+        self.assertNotIn('extra junk presave', models.signal_log)
 
     def test_1to1_reverse_direct_assignment_if_child_unsaved(self):
         customer = models.Customer(name='1to1 unsaved forward test', company=self.company)
@@ -93,10 +93,10 @@ class Tests(TestCase):
 
         company.customers = [customer2]
         company.save()
-        self.assertIn('company presave', models.signal_log.keys())
+        self.assertIn('company presave', models.signal_log)
 
         # Save triggered on customer2 on django 1.8 but FAILS on django 1.9
-        self.assertIn('customer presave', models.signal_log.keys())
+        self.assertIn('customer presave', models.signal_log)
 
         logged = models.signal_log['customer presave'][0]
         self.assertEqual(logged[0], models.Customer)
