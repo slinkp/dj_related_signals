@@ -83,6 +83,32 @@ class Tests(TestCase):
         self.assertEqual(len(models.signal_log['customer presave']), 1)
         self.assert_sent_exact('customer presave', 'customer postsave')
 
+    def test_1toM_reverse_add_sends_related_save(self):
+        customer = models.Customer(name='1to1 cust')
+        customer.save()
+
+        models.signal_log.clear()
+
+        self.company.customers.add(customer)
+        self.company.save()
+
+        self.assert_sent_exact(
+            'company presave', 'company postsave', 'customer presave', 'customer postsave')
+
+    def test_1toM_reverse_remove_does_not_send_related_save(self):
+        customer = models.Customer(name='1to1 cust')
+        customer.save()
+
+        self.company.customers.add(customer)
+        self.company.save()
+
+        models.signal_log.clear()
+
+        self.company.customers.remove(customer)
+        self.company.save()
+
+        self.assert_sent_exact('company presave', 'company postsave')
+
     def test_1toM_reverse_direct_assignment_does_not_fire_related_presave(self):
         customer2 = models.Customer(name="unsaved 1to1 cust")
         customer2.save()
