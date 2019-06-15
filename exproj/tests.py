@@ -261,18 +261,49 @@ class Tests(TestCase):
 
         self.assert_sent_exact('company postsave', 'company presave')
 
-    def test_MtoM_direct_forward_deletion(self):
-        # TODO
-        pass
+    def test_MtoM_direct_forward_deletion_does_not_send_related_signals(self):
+        customer = models.Customer(name='cust')
+        customer.save()
+        cat1 = models.CustomerCategory()
+        cat1.save()
+        customer.categories_direct = [cat1]
+        customer.save()
+
+        models.signal_log.clear()
+
+        customer.categories_direct = []
+        customer.save()
+
+        self.assert_sent_exact('customer presave', 'customer postsave')
 
     def test_MtoM_direct_reverse_deletion(self):
-        # TODO
-        pass
+        customer = models.Customer(name='cust')
+        customer.save()
+        cat1 = models.CustomerCategory()
+        cat1.save()
+        cat1.customers_direct = [customer]
+        cat1.save()
 
-    def test_MtoM_indirect_forward_deletion(self):
-        # TODO
-        pass
+        models.signal_log.clear()
 
-    def test_MtoM_indirect_reverse_deletion(self):
-        # TODO
-        pass
+        cat1.customers_direct = []
+        cat1.save()
+
+        self.assert_sent_exact('category presave', 'category postsave')
+
+    def test_MtoM_indirect_deletion(self):
+        company = self.company
+        customer = models.Customer(name='testing m2m forward', company=company)
+        customer.save()
+        cat1 = models.CustomerCategory(name='m2m cat 1')
+        cat1.save()
+
+        rel = models.CustomerCategoryRel(customer=customer, category=cat1)
+        rel.save()
+
+        models.signal_log.clear()
+
+        rel.delete()
+        # The 'through' model gets a signal, but not the relateds
+        self.assert_sent_exact('rel predelete', 'rel postdelete')
+
