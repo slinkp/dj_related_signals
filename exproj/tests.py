@@ -210,16 +210,30 @@ class Tests(TestCase):
             cust.extrajunk = None
             cust.save()
 
-        # self.assertItemsEqual(models.signal_log.keys(), [])
+    def test_1toM_forward_deletion_sends_no_related_signals(self):
+        customer = models.Customer(name='cust')
+        customer.company = self.company
+        customer.save()
 
+        models.signal_log.clear()
 
-    def test_1toM_forward_deletion(self):
-        # TODO
-        pass
+        customer.company = None
+        customer.save()
 
-    def test_1toM_reverse_deletion(self):
-        # TODO
-        pass
+        self.assert_sent_exact('customer postsave', 'customer presave')
+
+    def test_1toM_reverse_deletion_sends_no_related_signals(self):
+        customer = models.Customer(name='cust')
+        customer.save()
+        self.company.customers = [customer]
+        self.company.save()
+
+        models.signal_log.clear()
+
+        self.company.customers = []
+        self.company.save()
+
+        self.assert_sent_exact('company postsave', 'company presave')
 
     def test_MtoM_direct_forward_deletion(self):
         # TODO
