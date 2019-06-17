@@ -46,9 +46,9 @@ class Tests(TestCase):
         customer.extrajunk = extra
         customer.save()
 
-        self.assertIn('customer presave', models.signal_log)
+        self.assertIn('customer presave', models.signal_log.keys())
         # Passes on both 1.8 and 1.9
-        self.assertNotIn('extra junk presave', models.signal_log)
+        self.assertNotIn('extra junk presave', models.signal_log.keys())
 
     def test_1to1_reverse_direct_assignment_if_child_unsaved(self):
         customer = models.Customer(name='1to1 unsaved forward test', company=self.company)
@@ -83,7 +83,7 @@ class Tests(TestCase):
         self.assertEqual(len(models.signal_log['customer presave']), 1)
         self.assert_sent_exact('customer presave', 'customer postsave')
 
-    def test_1toM_reverse_add_sends_related_save(self):
+    def test_1toM_reverse_add_sends_related_presave(self):
         customer = models.Customer(name='1to1 cust')
         customer.save()
 
@@ -92,6 +92,7 @@ class Tests(TestCase):
         self.company.customers.add(customer)
         self.company.save()
 
+        # FAILS on Django 1.9: customer presave & customer postsave not sent.
         self.assert_sent_exact(
             'company presave', 'company postsave', 'customer presave', 'customer postsave')
 
@@ -109,7 +110,7 @@ class Tests(TestCase):
 
         self.assert_sent_exact('company presave', 'company postsave')
 
-    def test_1toM_reverse_direct_assignment_does_not_fire_related_presave(self):
+    def test_1toM_reverse_direct_assignment_fires_related_presave(self):
         customer2 = models.Customer(name="unsaved 1to1 cust")
         customer2.save()
         company = self.company
@@ -120,10 +121,10 @@ class Tests(TestCase):
 
         company.customers = [customer2]
         company.save()
-        self.assertIn('company presave', models.signal_log)
+        self.assertIn('company presave', models.signal_log.keys())
 
         # Save triggered on customer2 on django 1.8 but FAILS on django 1.9
-        self.assertIn('customer presave', models.signal_log)
+        self.assertIn('customer presave', models.signal_log.keys())
 
         logged = models.signal_log['customer presave'][0]
         self.assertEqual(logged[0], models.Customer)
@@ -276,7 +277,7 @@ class Tests(TestCase):
 
         self.assert_sent_exact('customer presave', 'customer postsave')
 
-    def test_MtoM_direct_reverse_deletion(self):
+    def test_MtoM_direct_reverse_deletion_does_not_send_related_signals(self):
         customer = models.Customer(name='cust')
         customer.save()
         cat1 = models.CustomerCategory()
@@ -306,4 +307,3 @@ class Tests(TestCase):
         rel.delete()
         # The 'through' model gets a signal, but not the relateds
         self.assert_sent_exact('rel predelete', 'rel postdelete')
-
