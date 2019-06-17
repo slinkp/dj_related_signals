@@ -115,6 +115,26 @@ def postdelete_extra(sender, **kwargs):
     signal_log['extra postdelete'].append((sender, kwargs))
 
 
+@receiver(pre_delete, sender=Customer)
+def predelete_customer(sender, **kwargs):
+    signal_log['customer predelete'].append((sender, kwargs))
+
+
+@receiver(post_delete, sender=Customer)
+def postdelete_customer(sender, **kwargs):
+    signal_log['customer postdelete'].append((sender, kwargs))
+
+
+@receiver(pre_delete, sender=CustomerCategory)
+def predelete_category(sender, **kwargs):
+    signal_log['category predelete'].append((sender, kwargs))
+
+
+@receiver(post_delete, sender=CustomerCategory)
+def postdelete_category(sender, **kwargs):
+    signal_log['category postdelete'].append((sender, kwargs))
+
+
 @receiver(pre_delete, sender=CustomerCategoryRel)
 def customer_category_rel_predelete(sender, **kwargs):
     signal_log['rel predelete'].append((sender, kwargs))
